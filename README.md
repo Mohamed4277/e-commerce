@@ -1,6 +1,6 @@
 ## Introduction
 
-Back-end e-commerce permet de supprimer/créer/updater et affihcer une liste de produits et enregistrer ces produits dans une base de donnée Mysql.
+Cette API e-commerce permet de supprimer/créer/updater et affihcerune liste de produits et enregistrer ces produits dans une base de donnée Mysql.
 
 ## Modules necessaires
 
@@ -27,5 +27,4 @@ Créer une base de donnée 'produits' et y mettre la table:
 
 - Lancer npm install
 - puis nodemon app.js (ou Node app.js)
-
-Utiliser postman pour utiliser l'API
+- Utiliser postman pour requeter

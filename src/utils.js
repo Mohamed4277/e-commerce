@@ -12,7 +12,14 @@ function verifCredentials(name, password, users) {
         (user) => user.name === name && user.password === password
       )
     ].role === "Admin";
-  return { isAccess, isAdmin };
+  const id =
+    isAccess === true &&
+    users[
+      users.findIndex(
+        (user) => user.name === name && user.password === password
+      )
+    ].id;
+  return { isAccess, isAdmin, id };
 }
 
 module.exports = verifCredentials;

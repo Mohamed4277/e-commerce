@@ -8,6 +8,7 @@ const crypto = require("crypto");
 const sessions = require("express-session");
 const verifCredentials = require("./utils.js");
 const USERS = require("./constante.js");
+const _ = require("lodash");
 
 let userBasket = {};
 
@@ -75,18 +76,64 @@ app.post("/add-product", (req, res) => {
   });
 });
 
+// Add new client
+app.post("/add-client", (req, res) => {
+  let formData = [
+    req.body["name"],
+    req.body["familyName"],
+    req.body["password"],
+    req.body["email"],
+  ];
+  db.dbAddNewClient(formData, (error, results) => {
+    res.send(results);
+  });
+});
+
+// Save order
+app.post("/save-order", (req, res) => {
+  const u = _.reduce(
+    session.basket,
+    function (result, value, key) {
+      result = [...result, [session.idUser, parseInt(key, 10), value]];
+      return result;
+    },
+    []
+  );
+  db.dbSaveOrder(u, (error, results) => {
+    res.send(results);
+  });
+});
+
+// display-cart
+app.get("/display-cart", (req, res) => {
+  db.dbGetProducts((error, results) => {
+    res.send(results);
+  });
+});
+
 // Add product
 app.post("/add-product/:id", (req, res) => {
   if (!session || !session.basket || !session.basket[req.params.id]) {
-    session.basket[req.params.id] = {
-      nb: 1,
-    };
+    session.basket[req.params.id] = 1;
   } else {
-    session.basket[req.params.id] = {
-      nb: session.basket[req.params.id].nb + 1,
-    };
+    session.basket[req.params.id] = session.basket[req.params.id] + 1;
   }
-  console.log("**********", session);
+  res.send();
+});
+
+// delete product
+app.post("/delete-product/:id", (req, res) => {
+  delete session.basket[req.params.id];
+  res.send();
+});
+
+// update product
+app.post("/update-product/:id", (req, res) => {
+  if (req.body.nbOfProduct == 0) {
+    delete session.basket[req.params.id];
+  } else {
+    session.basket[req.params.id] = req.body.nbOfProduct;
+  }
   res.send();
 });
 

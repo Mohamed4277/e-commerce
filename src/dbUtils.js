@@ -35,6 +35,36 @@ function dbAddProduct(produit, afterTreatment) {
   connection.end;
 }
 
+// Insert a new client
+function dbAddNewClient(client, afterTreatment) {
+  let connection = connectToMySQL();
+  let query = `INSERT INTO clients(name,familly_name,password,email) VALUES(?,?,?,?)`;
+  connection.query(query, client, (error, result) => {
+    if (error) {
+      console.log(error);
+    }
+    connection.commit();
+    connection.end;
+    afterTreatment(error, result);
+  });
+  connection.end;
+}
+
+// Save order
+function dbSaveOrder(session, afterTreatment) {
+  let connection = connectToMySQL();
+  let query = `INSERT INTO orders(client_id,product_id,quantity) VALUES ?`;
+  connection.query(query, [session], (error, result) => {
+    if (error) {
+      console.log(error);
+    }
+    connection.commit();
+    connection.end;
+    afterTreatment(error, result);
+  });
+  connection.end;
+}
+
 // Delete a product
 function dbDeleteProduct(task, afterTreatment) {
   let connection = connectToMySQL();
@@ -65,8 +95,10 @@ function dbUpdateProduct(produit, afterTreatment) {
 }
 
 module.exports = {
+  dbSaveOrder,
   dbGetProducts,
   dbAddProduct,
   dbDeleteProduct,
   dbUpdateProduct,
+  dbAddNewClient,
 };

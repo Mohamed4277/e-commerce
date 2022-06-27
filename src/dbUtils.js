@@ -13,10 +13,49 @@ function connectToMySQL() {
 }
 
 // Get products
-function dbGetProducts(callBackGet) {
+/*function dbGetProducts(callBackGet) {
   let connection = connectToMySQL();
   let query = "SELECT * FROM products ORDER BY id desc";
   connection.query(query, callBackGet);
+  connection.end;
+}*/
+
+function dbGetProducts(afterTreatment) {
+  let connection = connectToMySQL();
+  let query = "SELECT * FROM products ORDER BY id desc";
+  connection.query(query, (error, result) => {
+    if (error) {
+      console.log(error);
+    }
+
+    connection.commit();
+    afterTreatment(error, result);
+    connection.end;
+  });
+  connection.end;
+}
+
+// Get clients
+/*function dbGetClients(callBackGet) {
+  let connection = connectToMySQL();
+  let query = "SELECT * FROM clients ORDER BY id desc";
+  connection.query(query, callBackGet);
+  connection.end;
+}*/
+
+// Get clients
+function dbGetClients(afterTreatment) {
+  let connection = connectToMySQL();
+  let query = "SELECT * FROM clients ORDER BY id desc";
+  connection.query(query, (error, result) => {
+    if (error) {
+      console.log(error);
+    }
+
+    connection.commit();
+    afterTreatment(error, result);
+    connection.end;
+  });
   connection.end;
 }
 
@@ -29,8 +68,8 @@ function dbAddProduct(produit, afterTreatment) {
       console.log(error);
     }
     connection.commit();
-    connection.end;
     afterTreatment(error, result);
+    connection.end;
   });
   connection.end;
 }
@@ -101,4 +140,5 @@ module.exports = {
   dbDeleteProduct,
   dbUpdateProduct,
   dbAddNewClient,
+  dbGetClients,
 };

@@ -1,5 +1,6 @@
 function verifCredentials(name, password, users) {
   const isAccess =
+    users &&
     users.findIndex(
       (user) => user.name === name && user.password === password
     ) === -1
@@ -7,6 +8,7 @@ function verifCredentials(name, password, users) {
       : true;
   const isAdmin =
     isAccess === true &&
+    users &&
     users[
       users.findIndex(
         (user) => user.name === name && user.password === password
@@ -14,6 +16,7 @@ function verifCredentials(name, password, users) {
     ].role === "Admin";
   const id =
     isAccess === true &&
+    users &&
     users[
       users.findIndex(
         (user) => user.name === name && user.password === password

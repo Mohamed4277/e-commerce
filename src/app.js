@@ -4,17 +4,12 @@ const db = require("./dbUtils");
 const app = express();
 const port = 3001;
 const crypto = require("crypto");
-//const cookieParser = require("cookie-parser");
+const cookieParser = require("cookie-parser");
 const sessions = require("express-session");
 const verifCredentials = require("./utils.js");
-const USERS = require("./constante.js");
 const _ = require("lodash");
 
-let userBasket = {};
-
-let session;
-
-//app.use(cookieParser());
+app.use(cookieParser());
 
 const oneDay = 1000 * 60 * 60 * 24;
 
@@ -25,7 +20,7 @@ app.listen(port, () => {
 app.use(
   sessions({
     secret: "thisismysecret",
-    cookie: { maxAge: oneDay },
+    saveUninitialized: true,
   })
 );
 
@@ -35,8 +30,12 @@ app.use(
     credentials: true,
   })
 );
+
 app.use(express.urlencoded({ extended: true }));
+
 app.use(express.json());
+
+let session;
 
 // Get products
 app.get("/get-products", (req, res) => {
@@ -47,20 +46,22 @@ app.get("/get-products", (req, res) => {
 
 //Login
 app.post("/login", (req, res) => {
-  const { id, isAccess, isAdmin } = verifCredentials(
-    req.body["name"],
-    crypto.createHash("sha256").update(req.body["password"]).digest("hex"),
-    USERS
-  );
-  res.cookie("id", id, {
-    maxAge: 9000000,
-    httpOnly: true,
+  db.dbGetClients((error, results) => {
+    const { id, isAccess, isAdmin } = verifCredentials(
+      req.body["name"],
+      crypto.createHash("sha256").update(req.body["password"]).digest("hex"),
+      results
+    );
+    res.cookie("isAccess", isAccess, {
+      maxAge: 9000000,
+      httpOnly: true,
+    });
+    session = req.session;
+    session.idUser = id;
+    session.basket = {};
+    session.isAccess = isAccess;
+    res.send({ isAccess, isAdmin });
   });
-  userBasket[id] = { panier: [] };
-  session = req.session;
-  session.idUser = id;
-  session.basket = {};
-  res.send({ isAccess, isAdmin });
 });
 
 // Add product
@@ -81,7 +82,7 @@ app.post("/add-client", (req, res) => {
   let formData = [
     req.body["name"],
     req.body["familyName"],
-    req.body["password"],
+    crypto.createHash("sha256").update(req.body["password"]).digest("hex"),
     req.body["email"],
   ];
   db.dbAddNewClient(formData, (error, results) => {
@@ -91,17 +92,22 @@ app.post("/add-client", (req, res) => {
 
 // Save order
 app.post("/save-order", (req, res) => {
-  const u = _.reduce(
-    session.basket,
-    function (result, value, key) {
-      result = [...result, [session.idUser, parseInt(key, 10), value]];
-      return result;
-    },
-    []
-  );
-  db.dbSaveOrder(u, (error, results) => {
-    res.send(results);
-  });
+  if (session && session.basket) {
+    const u = _.reduce(
+      session && session.basket,
+      function (result, value, key) {
+        result = [
+          ...result,
+          [session.idUser, parseInt(key, 10), value === undefined ? 0 : value],
+        ];
+        return result;
+      },
+      []
+    );
+    db.dbSaveOrder(u, (error, results) => {
+      res.send(results);
+    });
+  }
 });
 
 // display-cart
@@ -121,12 +127,6 @@ app.post("/add-product/:id", (req, res) => {
   res.send();
 });
 
-// delete product
-app.post("/delete-product/:id", (req, res) => {
-  delete session.basket[req.params.id];
-  res.send();
-});
-
 // update product
 app.post("/update-product/:id", (req, res) => {
   if (req.body.nbOfProduct == 0) {
@@ -135,6 +135,16 @@ app.post("/update-product/:id", (req, res) => {
     session.basket[req.params.id] = req.body.nbOfProduct;
   }
   res.send();
+});
+
+// get nb of a product in basket
+app.get("/get-nb-product/:id", (req, res) => {
+  res.send(session.basket[req.params.id]);
+});
+
+// get nb of a product in basket
+app.get("/get-nb-product", (req, res) => {
+  res.send(session.basket);
 });
 
 // Delete product
@@ -158,3 +168,5 @@ app.post("/update-product", (req, res) => {
     res.send(results);
   });
 });
+
+module.exports = app;

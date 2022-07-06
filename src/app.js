@@ -5,7 +5,7 @@ const app = express();
 const port = 3001;
 const crypto = require("crypto");
 const cookieParser = require("cookie-parser");
-const sessions = require("express-session");
+const session = require("express-session");
 const verifCredentials = require("./utils.js");
 const _ = require("lodash");
 
@@ -18,9 +18,10 @@ app.listen(port, () => {
 });
 
 app.use(
-  sessions({
-    secret: "thisismysecret",
-    saveUninitialized: true,
+  session({
+    secret: "keyboard cat",
+    test: 34,
+    cookie: { maxAge: 600000, nbView: 0 },
   })
 );
 
@@ -35,7 +36,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(express.json());
 
-let session;
+let sessions = { basket: {} };
 
 // Get products
 app.get("/get-products", (req, res) => {
@@ -52,14 +53,6 @@ app.post("/login", (req, res) => {
       crypto.createHash("sha256").update(req.body["password"]).digest("hex"),
       results
     );
-    res.cookie("isAccess", isAccess, {
-      maxAge: 9000000,
-      httpOnly: true,
-    });
-    session = req.session;
-    session.idUser = id;
-    session.basket = {};
-    session.isAccess = isAccess;
     res.send({ isAccess, isAdmin });
   });
 });
@@ -92,13 +85,13 @@ app.post("/add-client", (req, res) => {
 
 // Save order
 app.post("/save-order", (req, res) => {
-  if (session && session.basket) {
+  if (sessions && sessions.basket) {
     const u = _.reduce(
-      session && session.basket,
+      sessions && sessions.basket,
       function (result, value, key) {
         result = [
           ...result,
-          [session.idUser, parseInt(key, 10), value === undefined ? 0 : value],
+          [sessions.idUser, parseInt(key, 10), value === undefined ? 0 : value],
         ];
         return result;
       },
@@ -119,10 +112,10 @@ app.get("/display-cart", (req, res) => {
 
 // Add product
 app.post("/add-product/:id", (req, res) => {
-  if (!session || !session.basket || !session.basket[req.params.id]) {
-    session.basket[req.params.id] = 1;
+  if (!sessions || !sessions.basket || !sessions.basket[req.params.id]) {
+    sessions.basket[req.params.id] = 1;
   } else {
-    session.basket[req.params.id] = session.basket[req.params.id] + 1;
+    sessions.basket[req.params.id] = sessions.basket[req.params.id] + 1;
   }
   res.send();
 });
@@ -132,19 +125,19 @@ app.post("/update-product/:id", (req, res) => {
   if (req.body.nbOfProduct == 0) {
     delete session.basket[req.params.id];
   } else {
-    session.basket[req.params.id] = req.body.nbOfProduct;
+    sessions.basket[req.params.id] = req.body.nbOfProduct;
   }
   res.send();
 });
 
 // get nb of a product in basket
 app.get("/get-nb-product/:id", (req, res) => {
-  res.send(session.basket[req.params.id]);
+  res.send(sessions.basket[req.params.id]);
 });
 
 // get nb of a product in basket
 app.get("/get-nb-product", (req, res) => {
-  res.send(session.basket);
+  res.send(sessions.basket);
 });
 
 // Delete product

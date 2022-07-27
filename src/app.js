@@ -53,6 +53,7 @@ app.post("/login", (req, res) => {
       crypto.createHash("sha256").update(req.body["password"]).digest("hex"),
       results
     );
+    sessions.idUser = id;
     res.send({ isAccess, isAdmin });
   });
 });
@@ -85,7 +86,12 @@ app.post("/add-client", (req, res) => {
 
 // Save order
 app.post("/save-order", (req, res) => {
-  if (sessions && sessions.basket) {
+  if (
+    sessions &&
+    sessions.basket &&
+    sessions.idUser > 0 &&
+    Object.keys(sessions.basket).length > 0
+  ) {
     const u = _.reduce(
       sessions && sessions.basket,
       function (result, value, key) {
